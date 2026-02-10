@@ -74,6 +74,43 @@ func ByteSliceToString(bytes []byte, codes map[byte]string) string {
 	return sb.String()
 }
 
+func PackBits(bitString string) ([]byte, int) {
+	// Determine the number of needed bytes
+	output := make([]byte, 0, (len(bitString)+7)/8)
+
+	var currentByte byte
+	bitCount := 0
+
+	for _, char := range bitString {
+		// Bit shifting to make room
+		currentByte <<= 1
+
+		if char == '1' {
+			currentByte |= 1
+		}
+
+		bitCount++
+
+		// If the byte is full, append it to the byte slice
+		if bitCount == 8 {
+			output = append(output, currentByte)
+			currentByte = 0
+			bitCount = 0
+		}
+	}
+
+	validCount := 8
+
+	// If there is a rest, do padding and set the validCount
+	// to the number of rest bits
+	if bitCount > 0 {
+		currentByte <<= 8 - bitCount
+		output = append(output, currentByte)
+		validCount = bitCount
+	}
+	return output, validCount
+}
+
 func Huffman(bytes []byte) []byte {
 	// Check byte frequencies
 	frequencies := FrequencyCounter(bytes)
@@ -87,5 +124,9 @@ func Huffman(bytes []byte) []byte {
 	// Create a map for the paths of the node values
 	codes := make(map[byte]string)
 	generateCodes(rootNode, "", codes)
+
+	// Generate a string, which is composed of the new bit representation of
+	// the huffman coding map
+	compressionString := ByteSliceToString(bytes, codes)
 
 }
