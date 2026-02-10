@@ -2,6 +2,7 @@ package main
 
 import (
 	"slices"
+	"strings"
 
 	"github.com/Melih7342/huffman-file-compression/models"
 )
@@ -62,6 +63,15 @@ func generateCodes(node *models.Node, currentPath string, codes map[byte]string)
 	}
 	generateCodes(node.Left, currentPath+"0", codes)
 	generateCodes(node.Right, currentPath+"1", codes)
+}
+
+func ByteSliceToString(bytes []byte, codes map[byte]string) string {
+	sb := &strings.Builder{}
+	for _, b := range bytes {
+		code := codes[b]
+		sb.WriteString(code)
+	}
+	return sb.String()
 }
 
 func Huffman(bytes []byte) []byte {
