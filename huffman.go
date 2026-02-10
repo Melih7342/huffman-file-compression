@@ -2,7 +2,7 @@ package main
 
 import (
 	"slices"
-	"sort"
+	"unicode"
 
 	"github.com/Melih7342/huffman-file-compression/models"
 )
@@ -31,6 +31,26 @@ func ConvertToNodeList(m map[byte]int) []*models.Node {
 		return a.Frequency - b.Frequency
 	})
 	return nodes
+}
+
+func BuildHuffmanTree(nodes []*models.Node) *models.Node {
+	for len(nodes) > 1 {
+		left := nodes[0]
+		right := nodes[1]
+
+		parent := &models.Node{
+			Frequency: left.Frequency + right.Frequency,
+			Left:      left,
+			Right:     right,
+		}
+		nodes = nodes[2:]
+		nodes = append(nodes, parent)
+
+		slices.SortFunc(nodes, func(a, b *models.Node) int {
+			return a.Frequency - b.Frequency
+		})
+	}
+	return nodes[0]
 }
 
 func Huffman(bytes []byte) []byte {
