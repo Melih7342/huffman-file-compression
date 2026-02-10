@@ -2,7 +2,6 @@ package main
 
 import (
 	"slices"
-	"unicode"
 
 	"github.com/Melih7342/huffman-file-compression/models"
 )
@@ -53,10 +52,30 @@ func BuildHuffmanTree(nodes []*models.Node) *models.Node {
 	return nodes[0]
 }
 
+func generateCodes(node *models.Node, currentPath string, codes map[byte]string) {
+	if node == nil {
+		return
+	}
+	if node.Left == nil && node.Right == nil {
+		codes[node.Value] = currentPath
+		return
+	}
+	generateCodes(node.Left, currentPath+"0", codes)
+	generateCodes(node.Right, currentPath+"1", codes)
+}
+
 func Huffman(bytes []byte) []byte {
 	// Check byte frequencies
 	frequencies := FrequencyCounter(bytes)
 
 	// Convert the Map of character-values and frequencies to a list of nodes
-	ConvertToNodeList(frequencies)
+	nodeList := ConvertToNodeList(frequencies)
+
+	// Build a huffman tree and save the root node
+	rootNode := BuildHuffmanTree(nodeList)
+
+	// Create a map for the paths of the node values
+	codes := make(map[byte]string)
+	generateCodes(rootNode, "", codes)
+
 }
