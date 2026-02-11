@@ -182,14 +182,6 @@ func SaveToFile(path string, metadata models.HuffmanMetaData, compressedData []b
 	return nil
 }
 
-func BuildHuffmanMetaData(frequencies map[byte]int, validBits int) (*models.HuffmanMetaData, error) {
-	data := &models.HuffmanMetaData{
-		Frequencies: frequencies,
-		ValidBits:   validBits,
-	}
-	return data, nil
-}
-
 func Huffman(path string) ([]byte, error) {
 	// Convert the origin file to a byte slice
 	bytes, err := FileToBytes(path)
