@@ -1,4 +1,4 @@
-package main
+package algorithm
 
 import (
 	"encoding/binary"
@@ -8,7 +8,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Melih7342/huffman-file-compression/models"
+	models2 "github.com/Melih7342/huffman-file-compression/internal/models"
 )
 
 func FileToBytes(path string) ([]byte, error) {
@@ -53,26 +53,26 @@ func FrequencyCounter(bytes []byte) map[byte]int {
 	return frequencies
 }
 
-func ConvertToNodeList(m map[byte]int) []*models.Node {
-	nodes := make([]*models.Node, 0, len(m))
+func ConvertToNodeList(m map[byte]int) []*models2.Node {
+	nodes := make([]*models2.Node, 0, len(m))
 	for value, frequency := range m {
-		newNode := &models.Node{
+		newNode := &models2.Node{
 			Value:     value,
 			Frequency: frequency}
 		nodes = append(nodes, newNode)
 	}
-	slices.SortFunc(nodes, func(a, b *models.Node) int {
+	slices.SortFunc(nodes, func(a, b *models2.Node) int {
 		return a.Frequency - b.Frequency
 	})
 	return nodes
 }
 
-func BuildHuffmanTree(nodes []*models.Node) *models.Node {
+func BuildHuffmanTree(nodes []*models2.Node) *models2.Node {
 	for len(nodes) > 1 {
 		left := nodes[0]
 		right := nodes[1]
 
-		parent := &models.Node{
+		parent := &models2.Node{
 			Frequency: left.Frequency + right.Frequency,
 			Left:      left,
 			Right:     right,
@@ -80,14 +80,14 @@ func BuildHuffmanTree(nodes []*models.Node) *models.Node {
 		nodes = nodes[2:]
 		nodes = append(nodes, parent)
 
-		slices.SortFunc(nodes, func(a, b *models.Node) int {
+		slices.SortFunc(nodes, func(a, b *models2.Node) int {
 			return a.Frequency - b.Frequency
 		})
 	}
 	return nodes[0]
 }
 
-func generateCodes(node *models.Node, currentPath string, codes map[byte]string) {
+func generateCodes(node *models2.Node, currentPath string, codes map[byte]string) {
 	if node == nil {
 		return
 	}
@@ -145,7 +145,7 @@ func PackBits(bitString string) ([]byte, int) {
 	return output, validCount
 }
 
-func SaveToFile(path string, metadata models.HuffmanMetaData, compressedData []byte) error {
+func SaveToFile(path string, metadata models2.HuffmanMetaData, compressedData []byte) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("could not create file: %w", err)
@@ -210,7 +210,7 @@ func Huffman(path string) error {
 	output, validCount := PackBits(compressionString)
 
 	// Create metadata instance
-	metadata := &models.HuffmanMetaData{
+	metadata := &models2.HuffmanMetaData{
 		Frequencies: frequencies,
 		ValidBits:   validCount,
 	}
