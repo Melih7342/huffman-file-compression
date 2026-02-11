@@ -13,6 +13,7 @@ func main() {
 	decompressMode := flag.Bool("d", false, "DecompressFile files")
 
 	// Read files from command line
+	flag.Parse()
 	files := flag.Args()
 
 	if len(files) == 0 {

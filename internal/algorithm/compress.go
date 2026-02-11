@@ -33,7 +33,10 @@ func ConvertToNodeList(m map[byte]int) []*models2.Node {
 		nodes = append(nodes, newNode)
 	}
 	slices.SortFunc(nodes, func(a, b *models2.Node) int {
-		return a.Frequency - b.Frequency
+		if a.Frequency != b.Frequency {
+			return a.Frequency - b.Frequency
+		}
+		return int(a.Value) - int(b.Value)
 	})
 	return nodes
 }
@@ -52,7 +55,10 @@ func BuildHuffmanTree(nodes []*models2.Node) *models2.Node {
 		nodes = append(nodes, parent)
 
 		slices.SortFunc(nodes, func(a, b *models2.Node) int {
-			return a.Frequency - b.Frequency
+			if a.Frequency != b.Frequency {
+				return a.Frequency - b.Frequency
+			}
+			return int(a.Value) - int(b.Value)
 		})
 	}
 	return nodes[0]
