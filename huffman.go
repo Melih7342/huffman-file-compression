@@ -1,6 +1,10 @@
 package main
 
 import (
+	"encoding/binary"
+	"encoding/json"
+	"fmt"
+	"os"
 	"slices"
 	"strings"
 
@@ -109,6 +113,43 @@ func PackBits(bitString string) ([]byte, int) {
 		validCount = bitCount
 	}
 	return output, validCount
+}
+
+func SaveToFile(path string, metadata models.HuffmanMetaData, compressedData []byte) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("could not create file: %w", err)
+	}
+
+	defer file.Close()
+
+	_, err = file.WriteString("HUFF")
+	if err != nil {
+		return err
+	}
+
+	metaBytes, err := json.Marshal(metadata)
+	if err != nil {
+		return fmt.Errorf("could not marshal metadata: %w", err)
+	}
+
+	metaLength := uint32(len(metaBytes))
+	err = binary.Write(file, binary.LittleEndian, metaLength)
+	if err != nil {
+		return fmt.Errorf("could not write meta length: %w", err)
+	}
+
+	_, err = file.Write(metaBytes)
+	if err != nil {
+		return fmt.Errorf("could not write metadata: %w", err)
+	}
+
+	_, err = file.Write(compressedData)
+	if err != nil {
+		return fmt.Errorf("could not write compressed data: %w", err)
+	}
+
+	return nil
 }
 
 func Huffman(bytes []byte) []byte {
