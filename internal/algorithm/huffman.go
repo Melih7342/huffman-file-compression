@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -215,8 +216,15 @@ func Huffman(path string) error {
 		ValidBits:   validCount,
 	}
 
+	newPath := path + ".huff"
+
+	if filepath.Ext(path) == ".huff" {
+		fmt.Printf("Skipping %s: already compressed\n", path)
+		return nil
+	}
+
 	// Write metadata and the compressed content into a HUFF-file
-	err = SaveToFile(path, *metadata, output)
+	err = SaveToFile(newPath, *metadata, output)
 	if err != nil {
 		return fmt.Errorf("could not save compressed file: %w", err)
 	}
