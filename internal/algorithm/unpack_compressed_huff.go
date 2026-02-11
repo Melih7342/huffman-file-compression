@@ -29,7 +29,7 @@ func UnpackCompressedHuffFile(compressedFile []byte) ([]byte, error) {
 
 	// Unpack into target file
 	dataStart := 8 + int(metaDataLength)
-	var decodedData []byte
+	decodedData := make([]byte, 0, len(compressedFile)*2)
 	wanderer := root
 	// loop through the content and write them with their values into the file
 	for i := dataStart; i < len(compressedFile); i++ {
