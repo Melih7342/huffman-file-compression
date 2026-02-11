@@ -11,6 +11,36 @@ import (
 	"github.com/Melih7342/huffman-file-compression/models"
 )
 
+func FileToBytes(path string) ([]byte, error) {
+	// Open the file provided in the path
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("could not open file: %v", err)
+	}
+
+	defer file.Close()
+
+	// Check the stats
+	stats, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+	if stats.IsDir() {
+		return nil, fmt.Errorf("%s is a directory", path)
+	}
+
+	// Create a slice for the bytes
+	data := make([]byte, stats.Size())
+
+	// Fill the byte slice with the provided file data
+	_, err = file.Read(data)
+	if err != nil {
+		return nil, fmt.Errorf("could not read file %v", path)
+	}
+
+	return data, nil
+}
+
 func FrequencyCounter(bytes []byte) map[byte]int {
 	frequencies := make(map[byte]int)
 	for i := 0; i < len(bytes); i++ {
@@ -152,7 +182,21 @@ func SaveToFile(path string, metadata models.HuffmanMetaData, compressedData []b
 	return nil
 }
 
-func Huffman(bytes []byte) []byte {
+func BuildHuffmanMetaData(frequencies map[byte]int, validBits int) (*models.HuffmanMetaData, error) {
+	data := &models.HuffmanMetaData{
+		Frequencies: frequencies,
+		ValidBits:   validBits,
+	}
+	return data, nil
+}
+
+func Huffman(path string) ([]byte, error) {
+	// Convert the origin file to a byte slice
+	bytes, err := FileToBytes(path)
+	if err != nil {
+		return nil, fmt.Errorf("could not convert file to bytes: %w", err)
+	}
+
 	// Check byte frequencies
 	frequencies := FrequencyCounter(bytes)
 
@@ -169,5 +213,17 @@ func Huffman(bytes []byte) []byte {
 	// Generate a string, which is composed of the new bit representation of
 	// the huffman coding map
 	compressionString := ByteSliceToString(bytes, codes)
+
+	// Pack the bits from compressed string to byte slice
+	output, validCount := PackBits(compressionString)
+
+	// Create metadata instance
+	metadata := &models.HuffmanMetaData{
+		Frequencies: frequencies,
+		ValidBits:   validCount,
+	}
+
+	// Write metadata and the compressed content into a HUFF-file
+	compressedFile := SaveToFile(path, *metadata, output)
 
 }
