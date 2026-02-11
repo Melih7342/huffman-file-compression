@@ -182,11 +182,11 @@ func SaveToFile(path string, metadata models.HuffmanMetaData, compressedData []b
 	return nil
 }
 
-func Huffman(path string) ([]byte, error) {
+func Huffman(path string) error {
 	// Convert the origin file to a byte slice
 	bytes, err := FileToBytes(path)
 	if err != nil {
-		return nil, fmt.Errorf("could not convert file to bytes: %w", err)
+		return fmt.Errorf("could not convert file to bytes: %w", err)
 	}
 
 	// Check byte frequencies
@@ -216,6 +216,9 @@ func Huffman(path string) ([]byte, error) {
 	}
 
 	// Write metadata and the compressed content into a HUFF-file
-	compressedFile := SaveToFile(path, *metadata, output)
-
+	err = SaveToFile(path, *metadata, output)
+	if err != nil {
+		return fmt.Errorf("could not save compressed file: %w", err)
+	}
+	return nil
 }
