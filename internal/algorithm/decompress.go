@@ -4,24 +4,32 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/Melih7342/huffman-file-compression/internal/models"
 )
 
-func UnpackCompressedHuffFile(compressedFile []byte) ([]byte, error) {
+func DecompressFile(path string) error {
+	// Convert file to byte slice
+	compressedFile, err := FileToBytes(path)
+	if err != nil {
+		return err
+	}
+
 	// Check if the file to unpack is a HUFF file
 	marker := string(compressedFile[:4])
 
 	if marker != "HUFF" {
-		return nil, fmt.Errorf("invalid compressed file marker")
+		return fmt.Errorf("invalid compressed file marker")
 	}
 
 	// Convert the 4. - 8. bytes into a metadata struct instance
 	metaDataLength := binary.LittleEndian.Uint32(compressedFile[4:8])
 	var metaData models.HuffmanMetaData
-	err := json.Unmarshal(compressedFile[4:8+metaDataLength], &metaData)
+	err = json.Unmarshal(compressedFile[8:8+metaDataLength], &metaData)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Rebuild the tree
@@ -55,5 +63,10 @@ func UnpackCompressedHuffFile(compressedFile []byte) ([]byte, error) {
 			}
 		}
 	}
-	return decodedData, nil
+	newPath := strings.TrimSuffix(path, ".huff")
+	err = os.WriteFile(newPath, decodedData, 0644)
+	if err != nil {
+		return fmt.Errorf("could not write unpacked file: %w", err)
+	}
+	return nil
 }

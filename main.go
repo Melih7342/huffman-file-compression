@@ -3,12 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+
+	"github.com/Melih7342/huffman-file-compression/internal/algorithm"
 )
 
 func main() {
 	// Define flags
 	compressMode := flag.Bool("c", false, "Compress files")
-	decompressMode := flag.Bool("d", false, "Decompress files")
+	decompressMode := flag.Bool("d", false, "DecompressFile files")
 
 	// Read files from command line
 	files := flag.Args()
@@ -20,7 +22,15 @@ func main() {
 
 	for _, path := range files {
 		if *compressMode {
-
+			err := algorithm.CompressFile(path)
+			if err != nil {
+				return
+			}
+		} else if *decompressMode {
+			err := algorithm.DecompressFile(path)
+			if err != nil {
+				return
+			}
 		}
 	}
 }

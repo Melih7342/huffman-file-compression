@@ -12,36 +12,6 @@ import (
 	models2 "github.com/Melih7342/huffman-file-compression/internal/models"
 )
 
-func FileToBytes(path string) ([]byte, error) {
-	// Open the file provided in the path
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("could not open file: %v", err)
-	}
-
-	defer file.Close()
-
-	// Check the stats
-	stats, err := file.Stat()
-	if err != nil {
-		return nil, err
-	}
-	if stats.IsDir() {
-		return nil, fmt.Errorf("%s is a directory", path)
-	}
-
-	// Create a slice for the bytes
-	data := make([]byte, stats.Size())
-
-	// Fill the byte slice with the provided file data
-	_, err = file.Read(data)
-	if err != nil {
-		return nil, fmt.Errorf("could not read file %v", path)
-	}
-
-	return data, nil
-}
-
 func FrequencyCounter(bytes []byte) map[byte]int {
 	frequencies := make(map[byte]int)
 	for i := 0; i < len(bytes); i++ {
@@ -183,7 +153,7 @@ func SaveToFile(path string, metadata models2.HuffmanMetaData, compressedData []
 	return nil
 }
 
-func Huffman(path string) error {
+func CompressFile(path string) error {
 	// Convert the origin file to a byte slice
 	bytes, err := FileToBytes(path)
 	if err != nil {
