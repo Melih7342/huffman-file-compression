@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Melih7342/huffman-file-compression/internal/algorithm"
 )
@@ -17,6 +18,7 @@ func main() {
 	verbosity := flag.Bool("v", false, "Verbose output")
 	directory := flag.Bool("r", false, "Recursive directory content compression")
 	help := flag.Bool("h", false, "Help")
+	performance := flag.Bool("p", false, "Performance metrics")
 	outputPath := flag.String("o", "", "Choose custom output location")
 
 	// Read files from command line
@@ -64,18 +66,26 @@ func main() {
 
 	for _, path := range files {
 		var finalPath string
+
 		if *outputPath != "" {
 			info, err := os.Stat(*outputPath)
 			isDir := err == nil && info.IsDir()
+
 			if len(files) > 1 || isDir {
 				fileName := filepath.Base(path)
+
 				if *compressMode {
 					fileName += ".huff"
 				} else if *decompressMode {
 					fileName = strings.TrimSuffix(fileName, ".huff")
 				}
+
 				finalPath = filepath.Join(*outputPath, fileName)
-				os.MkdirAll(*outputPath, 0755)
+
+				err := os.MkdirAll(*outputPath, 0755)
+				if err != nil {
+					fmt.Println("could not create output directory")
+				}
 			} else {
 				finalPath = *outputPath
 			}
@@ -88,14 +98,37 @@ func main() {
 		}
 
 		if *compressMode {
+			start := time.Now()
+
 			err := algorithm.CompressFile(path, finalPath, *verbosity)
 			if err != nil {
+				if strings.Contains(err.Error(), "compression inefficient") {
+					continue
+				}
+				fmt.Printf("Error compressing %s: %v\n", path, err)
 				return
 			}
+			end := time.Now()
+
+			if *performance {
+				fmt.Println("Compressing took", end.Sub(start))
+				err := algorithm.SizeReduction(path, finalPath)
+				if err != nil {
+					return
+				}
+			}
+
 		} else if *decompressMode {
+			start := time.Now()
+
 			err := algorithm.DecompressFile(path, finalPath, *verbosity)
 			if err != nil {
 				return
+			}
+			end := time.Now()
+
+			if *performance {
+				fmt.Println("Decompressing took", end.Sub(start))
 			}
 		}
 	}

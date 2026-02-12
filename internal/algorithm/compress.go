@@ -122,7 +122,22 @@ func PackBits(bitString string) ([]byte, int) {
 	return output, validCount
 }
 
-func SaveToFile(path string, metadata models2.HuffmanMetaData, compressedData []byte) error {
+func SaveToFile(path string, originalSize int64, metadata models2.HuffmanMetaData, compressedData []byte) error {
+
+	metaBytes, err := json.Marshal(metadata)
+	if err != nil {
+		return fmt.Errorf("could not marshal metadata: %w", err)
+	}
+
+	finalSize := int64(4 + 4 + len(metaBytes) + len(compressedData))
+
+	if originalSize < finalSize {
+		fmt.Printf("\n[Skip] Compressed file (%v bytes) would be larger than original (%v bytes).\n", finalSize, originalSize)
+		fmt.Println("Reason: Huffman metadata overhead (JSON table) exceeds compression savings on small files.")
+
+		return fmt.Errorf("compression inefficient: result larger than original")
+	}
+
 	file, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("could not create file: %w", err)
@@ -133,11 +148,6 @@ func SaveToFile(path string, metadata models2.HuffmanMetaData, compressedData []
 	_, err = file.WriteString("HUFF")
 	if err != nil {
 		return err
-	}
-
-	metaBytes, err := json.Marshal(metadata)
-	if err != nil {
-		return fmt.Errorf("could not marshal metadata: %w", err)
 	}
 
 	metaLength := uint32(len(metaBytes))
@@ -169,6 +179,8 @@ func CompressFile(filePath string, destinationPath string, verbose bool) error {
 	if len(bytes) == 0 {
 		return fmt.Errorf("file %s is empty", filePath)
 	}
+
+	originalSize := int64(len(bytes))
 
 	// Check byte frequencies
 	if verbose {
@@ -223,7 +235,8 @@ func CompressFile(filePath string, destinationPath string, verbose bool) error {
 	if verbose {
 		fmt.Printf("Saved to %s\n", destinationPath)
 	}
-	err = SaveToFile(destinationPath, *metadata, output)
+
+	err = SaveToFile(destinationPath, originalSize, *metadata, output)
 	if err != nil {
 		return fmt.Errorf("could not save compressed file: %w", err)
 	}
