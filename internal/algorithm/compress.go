@@ -159,32 +159,38 @@ func SaveToFile(path string, metadata models2.HuffmanMetaData, compressedData []
 	return nil
 }
 
-func CompressFile(path string) error {
+func CompressFile(filePath string, destinationPath string) error {
 	// Convert the origin file to a byte slice
-	bytes, err := FileToBytes(path)
+	bytes, err := FileToBytes(filePath)
 	if err != nil {
 		return fmt.Errorf("could not convert file to bytes: %w", err)
 	}
 
 	// Check byte frequencies
 	frequencies := FrequencyCounter(bytes)
+	fmt.Println("did frequencies")
 
 	// Convert the Map of character-values and frequencies to a list of nodes
 	nodeList := ConvertToNodeList(frequencies)
+	fmt.Println("did nodelist")
 
 	// Build a huffman tree and save the root node
 	rootNode := BuildHuffmanTree(nodeList)
+	fmt.Println("did tree")
 
 	// Create a map for the paths of the node values
 	codes := make(map[byte]string)
 	generateCodes(rootNode, "", codes)
+	fmt.Println("did codes")
 
 	// Generate a string, which is composed of the new bit representation of
 	// the huffman coding map
 	compressionString := ByteSliceToString(bytes, codes)
+	fmt.Println("did compression string")
 
 	// Pack the bits from compressed string to byte slice
 	output, validCount := PackBits(compressionString)
+	fmt.Println("packed bits")
 
 	// Create metadata instance
 	metadata := &models2.HuffmanMetaData{
@@ -192,15 +198,14 @@ func CompressFile(path string) error {
 		ValidBits:   validCount,
 	}
 
-	newPath := path + ".huff"
-
-	if filepath.Ext(path) == ".huff" {
-		fmt.Printf("Skipping %s: already compressed\n", path)
+	if filepath.Ext(filePath) == ".huff" {
+		fmt.Printf("Skipping %s: already compressed\n", filePath)
 		return nil
 	}
 
 	// Write metadata and the compressed content into a HUFF-file
-	err = SaveToFile(newPath, *metadata, output)
+	err = SaveToFile(destinationPath, *metadata, output)
+	fmt.Printf("Saved to %s\n", destinationPath)
 	if err != nil {
 		return fmt.Errorf("could not save compressed file: %w", err)
 	}
