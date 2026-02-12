@@ -9,17 +9,21 @@ import (
 	"github.com/Melih7342/huffman-file-compression/internal/models"
 )
 
-func DecompressFile(filePath string, targetPath string) error {
+func DecompressFile(filePath string, targetPath string, verbose bool) error {
 	// Convert file to byte slice
+	if verbose {
+		fmt.Printf("Converting the file %s to bytes\n", filePath)
+	}
 	compressedFile, err := FileToBytes(filePath)
-	fmt.Printf("Converting the file %s to bytes\n", filePath)
 	if err != nil {
 		return fmt.Errorf("error converting the file %s to bytes", filePath)
 	}
 
 	// Check if the file to unpack is a HUFF file
+	if verbose {
+		fmt.Println("checking the marker...")
+	}
 	marker := string(compressedFile[:4])
-	fmt.Println("checking the marker...")
 
 	if marker != "HUFF" {
 		return fmt.Errorf("invalid compressed file marker")
@@ -28,22 +32,29 @@ func DecompressFile(filePath string, targetPath string) error {
 	// Convert the 4. - 8. bytes into a metadata struct instance
 	metaDataLength := binary.LittleEndian.Uint32(compressedFile[4:8])
 	var metaData models.HuffmanMetaData
+	if verbose {
+		fmt.Println("checking the metadata...")
+	}
 	err = json.Unmarshal(compressedFile[8:8+metaDataLength], &metaData)
-	fmt.Println("checking the metadata...")
 	if err != nil {
 		return fmt.Errorf("error unmarshalling the metadata")
 	}
 
 	// Rebuild the tree
+	if verbose {
+		fmt.Println("building the huffman tree...")
+	}
 	root := BuildHuffmanTree(ConvertToNodeList(metaData.Frequencies))
-	fmt.Println("building the huffman tree...")
 
 	// Unpack into target file
 	dataStart := 8 + int(metaDataLength)
 	decodedData := make([]byte, 0, len(compressedFile)*2)
 	wanderer := root
 	// loop through the content and write them with their values into the file
-	fmt.Println("decompressing the content...")
+	if verbose {
+		fmt.Println("decompressing the content...")
+	}
+
 	for i := dataStart; i < len(compressedFile); i++ {
 		currentByte := compressedFile[i]
 
@@ -67,7 +78,10 @@ func DecompressFile(filePath string, targetPath string) error {
 			}
 		}
 	}
-	fmt.Printf("Writing the decompressed content into %s...", targetPath)
+	if verbose {
+		fmt.Printf("Writing the decompressed content into %s...", targetPath)
+	}
+
 	err = os.WriteFile(targetPath, decodedData, 0644)
 	if err != nil {
 		return fmt.Errorf("could not write unpacked file: %w", err)

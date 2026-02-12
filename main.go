@@ -14,7 +14,7 @@ func main() {
 	// Define flags
 	compressMode := flag.Bool("c", false, "Compress files")
 	decompressMode := flag.Bool("d", false, "DecompressFile files")
-	// verbosity := flag.Bool("v", false, "Verbosity")
+	verbosity := flag.Bool("v", false, "Verbosity")
 	// directory := flag.String("r", "", "Recursive directory content compression")
 	// help := flag.Bool("h", false, "Help")
 	outputPath := flag.String("o", "", "Output file path")

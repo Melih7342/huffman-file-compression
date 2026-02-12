@@ -159,7 +159,7 @@ func SaveToFile(path string, metadata models2.HuffmanMetaData, compressedData []
 	return nil
 }
 
-func CompressFile(filePath string, destinationPath string) error {
+func CompressFile(filePath string, destinationPath string, verbose bool) error {
 	// Convert the origin file to a byte slice
 	bytes, err := FileToBytes(filePath)
 	if err != nil {
@@ -167,30 +167,42 @@ func CompressFile(filePath string, destinationPath string) error {
 	}
 
 	// Check byte frequencies
+	if verbose {
+		fmt.Printf("checking character frequencies of %s\n", filePath)
+	}
 	frequencies := FrequencyCounter(bytes)
-	fmt.Println("did frequencies")
 
 	// Convert the Map of character-values and frequencies to a list of nodes
+	if verbose {
+		fmt.Printf("converting into a node list for %s\n", filePath)
+	}
 	nodeList := ConvertToNodeList(frequencies)
-	fmt.Println("did nodelist")
 
 	// Build a huffman tree and save the root node
+	if verbose {
+		fmt.Printf("building huffman tree for %s\n", filePath)
+	}
 	rootNode := BuildHuffmanTree(nodeList)
-	fmt.Println("did tree")
 
 	// Create a map for the paths of the node values
 	codes := make(map[byte]string)
+	if verbose {
+		fmt.Printf("generating huffman codes for %s\n", filePath)
+	}
 	generateCodes(rootNode, "", codes)
-	fmt.Println("did codes")
 
 	// Generate a string, which is composed of the new bit representation of
 	// the huffman coding map
+	if verbose {
+		fmt.Printf("creating compression string for %s\n", filePath)
+	}
 	compressionString := ByteSliceToString(bytes, codes)
-	fmt.Println("did compression string")
 
 	// Pack the bits from compressed string to byte slice
+	if verbose {
+		fmt.Printf("packing bits of compressed %s\n", filePath)
+	}
 	output, validCount := PackBits(compressionString)
-	fmt.Println("packed bits")
 
 	// Create metadata instance
 	metadata := &models2.HuffmanMetaData{
@@ -204,8 +216,10 @@ func CompressFile(filePath string, destinationPath string) error {
 	}
 
 	// Write metadata and the compressed content into a HUFF-file
+	if verbose {
+		fmt.Printf("Saved to %s\n", destinationPath)
+	}
 	err = SaveToFile(destinationPath, *metadata, output)
-	fmt.Printf("Saved to %s\n", destinationPath)
 	if err != nil {
 		return fmt.Errorf("could not save compressed file: %w", err)
 	}
