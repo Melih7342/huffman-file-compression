@@ -52,7 +52,7 @@ func main() {
 		files = initialPaths
 	}
 
-	for _, path := range initialPaths {
+	for _, path := range files {
 		var finalPath string
 		if *outputPath != "" {
 			info, err := os.Stat(*outputPath)

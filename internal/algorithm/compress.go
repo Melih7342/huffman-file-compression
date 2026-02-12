@@ -166,6 +166,10 @@ func CompressFile(filePath string, destinationPath string, verbose bool) error {
 		return fmt.Errorf("could not convert file to bytes: %w", err)
 	}
 
+	if len(bytes) == 0 {
+		return fmt.Errorf("file %s is empty", filePath)
+	}
+
 	// Check byte frequencies
 	if verbose {
 		fmt.Printf("checking character frequencies of %s\n", filePath)
