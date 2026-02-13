@@ -2,13 +2,16 @@ package worker
 
 import (
 	"fmt"
+	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/Melih7342/huffman-file-compression/internal/models"
 )
 
-func Engine(sourcePaths []string, finalPaths []string, mode string, verbosity bool) {
+func Engine(sourcePaths []string, finalPaths []string, mode string, verbosity bool, performance bool) {
 	jobs := make(chan models.CompressionJob, len(sourcePaths))
 	results := make(chan models.JobResult, len(sourcePaths))
 	numJobs := len(sourcePaths)
@@ -41,11 +44,40 @@ func Engine(sourcePaths []string, finalPaths []string, mode string, verbosity bo
 		close(results)
 	}()
 
+	var totalOriginal int64
+	var totalNew int64
+	processedCount := 0
+
+	fmt.Printf("Processing %d files using %d workers...\n\n", numJobs, numWorkers)
+
 	for result := range results {
+		processedCount++
 		if result.Error != nil {
-			fmt.Printf("Error at %s: %v\n", result.Path, result.Error)
-		} else {
-			fmt.Printf("finished: %s in %v\n", result.Path, result.Duration)
+			fmt.Printf("[%d/%d] Error at %s: %v\n", processedCount, numJobs, result.Path, result.Error)
+			continue
 		}
+		if performance {
+			fmt.Printf("[%d/%d] ✅ %-25s | %10v | Saved: %6.2f%%\n",
+				processedCount,
+				numJobs,
+				filepath.Base(result.Path),
+				result.Duration.Truncate(time.Millisecond),
+				result.SizeReduction,
+			)
+			totalOriginal += result.OriginalSize
+			totalNew += result.NewSize
+		} else {
+			fmt.Printf("[%d/%d] ✅ Finished: %s\n", processedCount, numJobs, filepath.Base(result.Path))
+		}
+	}
+	if performance && totalOriginal > 0 && mode == "c" {
+		totalDiff := 100 - (float64(totalNew) * 100 / float64(totalOriginal))
+		fmt.Println("\n" + strings.Repeat("=", 65))
+		fmt.Printf("FINAL STATISTICS\n")
+		fmt.Printf("Total Files:     %d\n", numJobs)
+		fmt.Printf("Total Original:  %.2f MB\n", float64(totalOriginal)/(1024*1024))
+		fmt.Printf("Total Packed:    %.2f MB\n", float64(totalNew)/(1024*1024))
+		fmt.Printf("Overall Savings: %.2f%%\n", totalDiff)
+		fmt.Println(strings.Repeat("=", 65))
 	}
 }
