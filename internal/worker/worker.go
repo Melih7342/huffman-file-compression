@@ -21,14 +21,11 @@ func worker(jobs <-chan models.CompressionJob, results chan<- models.JobResult, 
 			err = algorithm.DecompressFile(job.SourcePath, job.TargetPath, verbosity)
 		}
 
-		oldInfo, err := os.Stat(job.SourcePath)
-		if err != nil {
-			fmt.Printf("Error reading stats of source file %s", job.SourcePath)
-			continue
-		}
-		newInfo, err := os.Stat(job.TargetPath)
-		if err != nil {
-			fmt.Printf("Error reading stats of target file %s", job.TargetPath)
+		oldInfo, errOld := os.Stat(job.SourcePath)
+		newInfo, errNew := os.Stat(job.TargetPath)
+
+		if errOld != nil || errNew != nil {
+			results <- models.JobResult{Path: job.SourcePath, Error: fmt.Errorf("stat error")}
 			continue
 		}
 
