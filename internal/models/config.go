@@ -12,6 +12,7 @@ type Config struct {
 	Verbosity      bool
 	Recursive      bool
 	Performance    bool
+	Mode           string
 	OutputPath     string
 	InputPaths     []string
 }
@@ -39,12 +40,21 @@ func ParseConfig() *Config {
 		os.Exit(0)
 	}
 
+	mode := ""
+
+	if *c {
+		mode = "c"
+	} else if *d {
+		mode = "d"
+	}
+
 	return &Config{
 		CompressMode:   *c,
 		DecompressMode: *d,
 		Verbosity:      *v,
 		Recursive:      *r,
 		Performance:    *p,
+		Mode:           mode,
 		OutputPath:     *o,
 		InputPaths:     args,
 	}
