@@ -8,7 +8,7 @@ import (
 	"github.com/Melih7342/huffman-file-compression/internal/models"
 )
 
-func engine(sourcePaths []string, finalPaths []string, mode string, verbosity bool) {
+func Engine(sourcePaths []string, finalPaths []string, mode string, verbosity bool) {
 	jobs := make(chan models.CompressionJob, len(sourcePaths))
 	results := make(chan models.JobResult, len(sourcePaths))
 	numJobs := len(sourcePaths)

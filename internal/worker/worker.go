@@ -1,6 +1,8 @@
 package worker
 
 import (
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/Melih7342/huffman-file-compression/internal/algorithm"
@@ -19,10 +21,26 @@ func worker(jobs <-chan models.CompressionJob, results chan<- models.JobResult, 
 			err = algorithm.DecompressFile(job.SourcePath, job.TargetPath, verbosity)
 		}
 
+		oldInfo, err := os.Stat(job.SourcePath)
+		if err != nil {
+			fmt.Printf("Error reading stats of source file %s", job.SourcePath)
+			continue
+		}
+		newInfo, err := os.Stat(job.TargetPath)
+		if err != nil {
+			fmt.Printf("Error reading stats of target file %s", job.TargetPath)
+			continue
+		}
+
+		sizeReduction, err := algorithm.SizeReduction(job.SourcePath, job.TargetPath)
+
 		results <- models.JobResult{
-			Path:     job.SourcePath,
-			Duration: time.Since(start),
-			Error:    err,
+			Path:          job.SourcePath,
+			OriginalSize:  oldInfo.Size(),
+			NewSize:       newInfo.Size(),
+			Duration:      time.Since(start),
+			SizeReduction: sizeReduction,
+			Error:         err,
 		}
 	}
 }

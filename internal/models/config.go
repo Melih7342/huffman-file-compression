@@ -40,11 +40,9 @@ func ParseConfig() *Config {
 		os.Exit(0)
 	}
 
-	mode := ""
+	mode := "c"
 
-	if *c {
-		mode = "c"
-	} else if *d {
+	if *d {
 		mode = "d"
 	}
 
