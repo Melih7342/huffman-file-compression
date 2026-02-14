@@ -60,6 +60,15 @@ func TestDetermineFinalPath(t *testing.T) {
 			cfg:         models.Config{},
 			expectError: true,
 		},
+		{
+			name:  "Provide a target file name",
+			input: file1,
+			cfg: models.Config{
+				CompressMode: true,
+				OutputPath:   "customfilename.huff",
+			},
+			expectedOutput: "customfilename.huff",
+		},
 	}
 	for _, tt := range test {
 		t.Run(tt.name, func(t *testing.T) {
