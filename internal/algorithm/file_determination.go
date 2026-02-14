@@ -18,9 +18,15 @@ func DetermineFiles(cfg models.Config) []string {
 					return fmt.Errorf("error walking directory %s: %v", path, err)
 				}
 				if !d.IsDir() {
-					if cfg.CompressMode && filepath.Ext(path) == ".huff" {
+					ext := filepath.Ext(path)
+
+					if cfg.CompressMode && ext == ".huff" {
+						return nil
+
+					} else if cfg.DecompressMode && ext != ".huff" {
 						return nil
 					}
+
 					files = append(files, path)
 				}
 				return nil
