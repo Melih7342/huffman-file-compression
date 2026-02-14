@@ -18,7 +18,7 @@ func DetermineFinalPath(source string, cfg models.Config, fileCount int) (string
 		return "", fmt.Errorf("please provide a filepath")
 	}
 
-	var finalPath string
+	target := source
 
 	if cfg.OutputPath != "" {
 		outputInfo, err := os.Stat(cfg.OutputPath)
@@ -26,44 +26,36 @@ func DetermineFinalPath(source string, cfg models.Config, fileCount int) (string
 
 		if fileCount > 1 || outputIsDir {
 			fileName := filepath.Base(source)
-
-			if cfg.CompressMode {
-				if filepath.Ext(fileName) != ".huff" {
-					fileName += ".huff"
-				} else {
-					return "", fmt.Errorf("the file %s has extension .huff and likely already compressed", fileName)
-				}
-			} else if cfg.DecompressMode {
-				if filepath.Ext(fileName) == ".huff" {
-					fileName = strings.TrimSuffix(fileName, ".huff")
-				} else {
-					return "", fmt.Errorf("the file %s doesn't have extension .huff and likely isn't compressed", fileName)
-				}
+			if err := extensionHandling(cfg, &fileName); err != nil {
+				return "", err
 			}
 
-			finalPath = filepath.Join(cfg.OutputPath, fileName)
-
-			err := os.MkdirAll(cfg.OutputPath, 0755)
-			if err != nil {
-				fmt.Println("could not create output directory")
+			if err := os.MkdirAll(cfg.OutputPath, 0755); err != nil {
+				return "", fmt.Errorf("could not create directory: %w", err)
 			}
-		} else {
-			finalPath = cfg.OutputPath
+			return filepath.Join(cfg.OutputPath, fileName), nil
 		}
-	} else {
-		if cfg.CompressMode {
-			if filepath.Ext(source) != ".huff" {
-				source += ".huff"
-			} else {
-				return "", fmt.Errorf("the file %s has extension .huff and likely already compressed", source)
-			}
-		} else if cfg.DecompressMode {
-			if filepath.Ext(source) == ".huff" {
-				source = strings.TrimSuffix(source, ".huff")
-			} else {
-				return "", fmt.Errorf("the file %s doesn't have extension .huff and likely isn't compressed", source)
-			}
-		}
+		return cfg.OutputPath, nil
 	}
-	return finalPath, nil
+
+	if err := extensionHandling(cfg, &target); err != nil {
+		return "", err
+	}
+
+	return target, nil
+}
+
+func extensionHandling(cfg models.Config, filename *string) error {
+	if cfg.CompressMode {
+		if filepath.Ext(*filename) == ".huff" {
+			return fmt.Errorf("the file %s already has .huff extension", *filename)
+		}
+		*filename += ".huff"
+	} else if cfg.DecompressMode {
+		if filepath.Ext(*filename) != ".huff" {
+			return fmt.Errorf("the file %s does not have .huff extension", *filename)
+		}
+		*filename = strings.TrimSuffix(*filename, ".huff")
+	}
+	return nil
 }
