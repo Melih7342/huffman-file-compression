@@ -19,6 +19,10 @@ func SizeReduction(file string, compressed string) (float64, error) {
 	oldSize := info.Size()
 	newSize := infoCompressed.Size()
 
+	if oldSize == 0 {
+		return 0, nil
+	}
+
 	diff := 100 - (float64(newSize) * 100 / float64(oldSize))
 
 	return diff, nil
