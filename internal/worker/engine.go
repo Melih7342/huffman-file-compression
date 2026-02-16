@@ -11,7 +11,7 @@ import (
 	"github.com/Melih7342/huffman-file-compression/internal/models"
 )
 
-func Engine(sourcePaths []string, finalPaths []string, mode string, verbosity bool, performance bool) {
+func Engine(sourcePaths []string, finalPaths []string, cfg *models.Config) {
 	jobs := make(chan models.CompressionJob, len(sourcePaths))
 	results := make(chan models.JobResult, len(sourcePaths))
 	numJobs := len(sourcePaths)
@@ -26,7 +26,7 @@ func Engine(sourcePaths []string, finalPaths []string, mode string, verbosity bo
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			worker(jobs, results, mode, verbosity)
+			worker(jobs, results, cfg.Mode, *cfg)
 		}()
 	}
 
@@ -56,7 +56,7 @@ func Engine(sourcePaths []string, finalPaths []string, mode string, verbosity bo
 			fmt.Printf("[%d/%d] Error at %s: %v\n", processedCount, numJobs, result.Path, result.Error)
 			continue
 		}
-		if performance {
+		if cfg.Performance {
 			fmt.Printf("[%d/%d] ✅ %-25s | %10v | Saved: %6.2f%%\n",
 				processedCount,
 				numJobs,
@@ -70,7 +70,7 @@ func Engine(sourcePaths []string, finalPaths []string, mode string, verbosity bo
 			fmt.Printf("[%d/%d] ✅ Finished: %s\n", processedCount, numJobs, filepath.Base(result.Path))
 		}
 	}
-	if performance && totalOriginal > 0 && mode == "c" {
+	if cfg.Performance && totalOriginal > 0 && cfg.Mode == "c" {
 		totalDiff := 100 - (float64(totalNew) * 100 / float64(totalOriginal))
 		fmt.Println("\n" + strings.Repeat("=", 65))
 		fmt.Printf("FINAL STATISTICS\n")

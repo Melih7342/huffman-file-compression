@@ -19,6 +19,6 @@ func main() {
 		finalPaths[i], _ = algorithm.DetermineFinalPath(file, *cfg, len(files))
 	}
 
-	worker.Engine(files, finalPaths, cfg.Mode, cfg.Verbosity, cfg.Performance)
+	worker.Engine(files, finalPaths, cfg)
 
 }
