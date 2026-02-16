@@ -19,7 +19,7 @@ A high-performance command-line interface (CLI) tool written in Go that compress
 
 ### 1. Installation
 
-Download the latest binary for your operating system from the [Releases](#) page or build it from source:
+Download the latest binary for your operating system from the [Releases](https://github.com/Melih7342/huffman-file-compression/releases) page or build it from source:
 
 ```bash
 go build -o huffman ./main.go
