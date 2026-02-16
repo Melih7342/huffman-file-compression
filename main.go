@@ -16,7 +16,7 @@ func main() {
 	finalPaths := make([]string, len(files))
 
 	for i, file := range files {
-		finalPaths[i] = algorithm.DetermineFinalPath(file, *cfg, len(files))
+		finalPaths[i], _ = algorithm.DetermineFinalPath(file, *cfg, len(files))
 	}
 
 	worker.Engine(files, finalPaths, cfg.Mode, cfg.Verbosity, cfg.Performance)
