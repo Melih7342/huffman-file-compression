@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	models2 "github.com/Melih7342/huffman-file-compression/internal/models"
+	"github.com/Melih7342/huffman-file-compression/internal/models"
 )
 
 func FrequencyCounter(bytes []byte) map[byte]int {
@@ -24,15 +24,15 @@ func FrequencyCounter(bytes []byte) map[byte]int {
 	return frequencies
 }
 
-func ConvertToNodeList(m map[byte]int) []*models2.Node {
-	nodes := make([]*models2.Node, 0, len(m))
+func ConvertToNodeList(m map[byte]int) []*models.Node {
+	nodes := make([]*models.Node, 0, len(m))
 	for value, frequency := range m {
-		newNode := &models2.Node{
+		newNode := &models.Node{
 			Value:     value,
 			Frequency: frequency}
 		nodes = append(nodes, newNode)
 	}
-	slices.SortFunc(nodes, func(a, b *models2.Node) int {
+	slices.SortFunc(nodes, func(a, b *models.Node) int {
 		if a.Frequency != b.Frequency {
 			return a.Frequency - b.Frequency
 		}
@@ -41,12 +41,12 @@ func ConvertToNodeList(m map[byte]int) []*models2.Node {
 	return nodes
 }
 
-func BuildHuffmanTree(nodes []*models2.Node) *models2.Node {
+func BuildHuffmanTree(nodes []*models.Node) *models.Node {
 	for len(nodes) > 1 {
 		left := nodes[0]
 		right := nodes[1]
 
-		parent := &models2.Node{
+		parent := &models.Node{
 			Frequency: left.Frequency + right.Frequency,
 			Left:      left,
 			Right:     right,
@@ -54,7 +54,7 @@ func BuildHuffmanTree(nodes []*models2.Node) *models2.Node {
 		nodes = nodes[2:]
 		nodes = append(nodes, parent)
 
-		slices.SortFunc(nodes, func(a, b *models2.Node) int {
+		slices.SortFunc(nodes, func(a, b *models.Node) int {
 			if a.Frequency != b.Frequency {
 				return a.Frequency - b.Frequency
 			}
@@ -64,7 +64,7 @@ func BuildHuffmanTree(nodes []*models2.Node) *models2.Node {
 	return nodes[0]
 }
 
-func generateCodes(node *models2.Node, currentPath string, codes map[byte]string) {
+func generateCodes(node *models.Node, currentPath string, codes map[byte]string) {
 	if node == nil {
 		return
 	}
@@ -122,7 +122,7 @@ func PackBits(bitString string) ([]byte, int) {
 	return output, validCount
 }
 
-func SaveToFile(path string, originalSize int64, metadata models2.HuffmanMetaData, compressedData []byte) error {
+func SaveToFile(path string, originalSize int64, metadata models.HuffmanMetaData, compressedData []byte, cfg models.Config) error {
 
 	metaBytes, err := json.Marshal(metadata)
 	if err != nil {
@@ -131,7 +131,7 @@ func SaveToFile(path string, originalSize int64, metadata models2.HuffmanMetaDat
 
 	finalSize := int64(4 + 4 + len(metaBytes) + len(compressedData))
 
-	if originalSize < finalSize {
+	if !cfg.Force && originalSize < finalSize {
 		fmt.Printf("\n[Skip] Compressed file (%v bytes) would be larger than original (%v bytes).\n", finalSize, originalSize)
 		fmt.Println("Reason: Huffman metadata overhead (JSON table) exceeds compression savings on small files.")
 
@@ -169,7 +169,7 @@ func SaveToFile(path string, originalSize int64, metadata models2.HuffmanMetaDat
 	return nil
 }
 
-func CompressFile(filePath string, destinationPath string, verbose bool) error {
+func CompressFile(filePath string, destinationPath string, cfg models.Config) error {
 	// Convert the origin file to a byte slice
 	bytes, err := FileToBytes(filePath)
 	if err != nil {
@@ -183,45 +183,45 @@ func CompressFile(filePath string, destinationPath string, verbose bool) error {
 	originalSize := int64(len(bytes))
 
 	// Check byte frequencies
-	if verbose {
+	if cfg.Verbosity {
 		fmt.Printf("checking character frequencies of %s\n", filePath)
 	}
 	frequencies := FrequencyCounter(bytes)
 
 	// Convert the Map of character-values and frequencies to a list of nodes
-	if verbose {
+	if cfg.Verbosity {
 		fmt.Printf("converting into a node list for %s\n", filePath)
 	}
 	nodeList := ConvertToNodeList(frequencies)
 
 	// Build a huffman tree and save the root node
-	if verbose {
+	if cfg.Verbosity {
 		fmt.Printf("building huffman tree for %s\n", filePath)
 	}
 	rootNode := BuildHuffmanTree(nodeList)
 
 	// Create a map for the paths of the node values
 	codes := make(map[byte]string)
-	if verbose {
+	if cfg.Verbosity {
 		fmt.Printf("generating huffman codes for %s\n", filePath)
 	}
 	generateCodes(rootNode, "", codes)
 
 	// Generate a string, which is composed of the new bit representation of
 	// the huffman coding map
-	if verbose {
+	if cfg.Verbosity {
 		fmt.Printf("creating compression string for %s\n", filePath)
 	}
 	compressionString := ByteSliceToString(bytes, codes)
 
 	// Pack the bits from compressed string to byte slice
-	if verbose {
+	if cfg.Verbosity {
 		fmt.Printf("packing bits of compressed %s\n", filePath)
 	}
 	output, validCount := PackBits(compressionString)
 
 	// Create metadata instance
-	metadata := &models2.HuffmanMetaData{
+	metadata := &models.HuffmanMetaData{
 		Frequencies: frequencies,
 		ValidBits:   validCount,
 	}
@@ -232,11 +232,11 @@ func CompressFile(filePath string, destinationPath string, verbose bool) error {
 	}
 
 	// Write metadata and the compressed content into a HUFF-file
-	if verbose {
+	if cfg.Verbosity {
 		fmt.Printf("Saved to %s\n", destinationPath)
 	}
 
-	err = SaveToFile(destinationPath, originalSize, *metadata, output)
+	err = SaveToFile(destinationPath, originalSize, *metadata, output, cfg)
 	if err != nil {
 		return fmt.Errorf("could not save compressed file: %w", err)
 	}

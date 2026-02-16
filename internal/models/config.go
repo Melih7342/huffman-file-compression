@@ -12,6 +12,7 @@ type Config struct {
 	Verbosity      bool
 	Recursive      bool
 	Performance    bool
+	Force          bool
 	Mode           string
 	OutputPath     string
 	InputPaths     []string
@@ -20,6 +21,7 @@ type Config struct {
 func ParseConfig() *Config {
 	c := flag.Bool("c", false, "Compress file(s)")
 	d := flag.Bool("d", false, "Decompress file(s)")
+	f := flag.Bool("f", false, "Forced compression")
 	v := flag.Bool("v", false, "Verbose output")
 	r := flag.Bool("r", false, "Recursive directory content compression")
 	h := flag.Bool("h", false, "Help")
@@ -52,6 +54,7 @@ func ParseConfig() *Config {
 		Verbosity:      *v,
 		Recursive:      *r,
 		Performance:    *p,
+		Force:          *f,
 		Mode:           mode,
 		OutputPath:     *o,
 		InputPaths:     args,

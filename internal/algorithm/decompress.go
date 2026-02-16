@@ -9,9 +9,9 @@ import (
 	"github.com/Melih7342/huffman-file-compression/internal/models"
 )
 
-func DecompressFile(filePath string, targetPath string, verbose bool) error {
+func DecompressFile(filePath string, targetPath string, cfg models.Config) error {
 	// Convert file to byte slice
-	if verbose {
+	if cfg.Verbosity {
 		fmt.Printf("Converting the file %s to bytes\n", filePath)
 	}
 	compressedFile, err := FileToBytes(filePath)
@@ -20,7 +20,7 @@ func DecompressFile(filePath string, targetPath string, verbose bool) error {
 	}
 
 	// Check if the file to unpack is a HUFF file
-	if verbose {
+	if cfg.Verbosity {
 		fmt.Println("checking the marker...")
 	}
 	marker := string(compressedFile[:4])
@@ -32,7 +32,7 @@ func DecompressFile(filePath string, targetPath string, verbose bool) error {
 	// Convert the 4. - 8. bytes into a metadata struct instance
 	metaDataLength := binary.LittleEndian.Uint32(compressedFile[4:8])
 	var metaData models.HuffmanMetaData
-	if verbose {
+	if cfg.Verbosity {
 		fmt.Println("checking the metadata...")
 	}
 	err = json.Unmarshal(compressedFile[8:8+metaDataLength], &metaData)
@@ -41,7 +41,7 @@ func DecompressFile(filePath string, targetPath string, verbose bool) error {
 	}
 
 	// Rebuild the tree
-	if verbose {
+	if cfg.Verbosity {
 		fmt.Println("building the huffman tree...")
 	}
 	root := BuildHuffmanTree(ConvertToNodeList(metaData.Frequencies))
@@ -50,8 +50,18 @@ func DecompressFile(filePath string, targetPath string, verbose bool) error {
 	dataStart := 8 + int(metaDataLength)
 	decodedData := make([]byte, 0, len(compressedFile)*2)
 	wanderer := root
+
+	if root.Left == nil && root.Right == nil {
+		totalChars := 0
+		for _, freq := range metaData.Frequencies {
+			totalChars += freq
+		}
+		for i := 0; i < totalChars; i++ {
+			decodedData = append(decodedData, root.Value)
+		}
+	}
 	// loop through the content and write them with their values into the file
-	if verbose {
+	if cfg.Verbosity {
 		fmt.Println("decompressing the content...")
 	}
 
@@ -78,7 +88,7 @@ func DecompressFile(filePath string, targetPath string, verbose bool) error {
 			}
 		}
 	}
-	if verbose {
+	if cfg.Verbosity {
 		fmt.Printf("Writing the decompressed content into %s...", targetPath)
 	}
 

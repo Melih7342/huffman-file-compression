@@ -9,16 +9,16 @@ import (
 	"github.com/Melih7342/huffman-file-compression/internal/models"
 )
 
-func worker(jobs <-chan models.CompressionJob, results chan<- models.JobResult, mode string, verbosity bool) {
+func worker(jobs <-chan models.CompressionJob, results chan<- models.JobResult, mode string, cfg models.Config) {
 
 	for job := range jobs {
 		start := time.Now()
 		var err error
 
 		if mode == "c" {
-			err = algorithm.CompressFile(job.SourcePath, job.TargetPath, verbosity)
+			err = algorithm.CompressFile(job.SourcePath, job.TargetPath, cfg)
 		} else if mode == "d" {
-			err = algorithm.DecompressFile(job.SourcePath, job.TargetPath, verbosity)
+			err = algorithm.DecompressFile(job.SourcePath, job.TargetPath, cfg)
 		}
 
 		oldInfo, errOld := os.Stat(job.SourcePath)
